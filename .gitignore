@@ -1,6 +1,7 @@
 # Data files (too large for GitHub)
 data/raw/*.csv
 *.pbix.backup
+data/processed/*.csv
 
 # Python
 __pycache__/
