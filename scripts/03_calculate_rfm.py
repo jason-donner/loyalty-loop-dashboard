@@ -2,8 +2,8 @@
 03_calculate_rfm.py
 Calculates RFM scores for all households.
 
-Author: [Your Name]
-Date: [Date]
+Author: Jason Donner
+Date: 16-01-2026
 """
 
 import pandas as pd
