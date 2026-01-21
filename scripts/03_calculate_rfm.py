@@ -31,10 +31,10 @@ def calculate_rfm():
     
     rfm.columns = ['household_key', 'Recency_Days', 'Frequency', 'Monetary']
     
-    print(f"  Households: {len(rfm)}")
+    print(f"  Households: {len(rfm):,}")
     print(f"  Recency range: {rfm['Recency_Days'].min()} - {rfm['Recency_Days'].max()} days")
     print(f"  Frequency range: {rfm['Frequency'].min()} - {rfm['Frequency'].max()} trips")
-    print(f"  Monetary range: ${rfm['Monetary'].min():.2f} - ${rfm['Monetary'].max():.2f}")
+    print(f"  Monetary range: ${rfm['Monetary'].min():,.2f} - ${rfm['Monetary'].max():,.2f}")
     
     return rfm
 

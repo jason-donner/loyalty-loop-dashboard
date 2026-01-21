@@ -1,92 +1,102 @@
 """
 01_clean_transactions.py
-Cleans raw transaction data and prepares for Power BI import.
+Production Data Cleaning Pipeline.
 
-Author: Jason Donner
-Date: 15-01-2026
+CORE LOGIC:
+1. Semantic Filter: Removes known non-grocery categories (Fuel).
+2. Economic Filter: Removes non-merchandise rows (Points/Tokens) based on Unit Price < $0.05.
+   - This surgically separates valid 'Misc' merchandise from administrative points.
+3. Safety Cap: Removes remaining anomalies with Quantity > 150.
 """
 
 import pandas as pd
+import numpy as np
 from pathlib import Path
-from datetime import datetime
 
-# Configuration
+# --- CONFIGURATION ---
 RAW_DIR = Path("data/raw")
 PROCESSED_DIR = Path("data/processed")
-ANCHOR_DATE = "2024-01-01"  # Arbitrary start date for relative days
+ANCHOR_DATE = "2024-01-01"
+QTY_CAP = 150
+MIN_UNIT_PRICE = 0.05
 
-def load_transactions():
-    """Load raw transaction data with optimized dtypes."""
-    print("Loading transactions...")
-    
-    dtype_spec = {
-        'household_key': 'int32',
-        'BASKET_ID': 'int64',
-        'DAY': 'int16',
-        'PRODUCT_ID': 'int32',
-        'QUANTITY': 'int16',
-        'SALES_VALUE': 'float32',
-        'RETAIL_DISC': 'float32',
-        'COUPON_DISC': 'float32',
-        'COUPON_MATCH_DISC': 'float32',
-        'STORE_ID': 'int16',
-        'WEEK_NO': 'int8',
-        'TRANS_TIME': 'int16'
-    }
-    
-    df = pd.read_csv(RAW_DIR / "transaction_data.csv", dtype=dtype_spec)
-    print(f"  Loaded {len(df):,} rows")
-    return df
+def load_data():
+    """Loads raw transaction and product data with strict type enforcement."""
+    print("Loading data...")
+    # Enforce int64 for IDs to ensure successful merging
+    trans = pd.read_csv(RAW_DIR / "transaction_data.csv", dtype={'PRODUCT_ID': 'int64', 'household_key': 'int64'})
+    prod = pd.read_csv(RAW_DIR / "product.csv", dtype={'PRODUCT_ID': 'int64'})
+    return trans, prod
 
-def clean_transactions(df):
-    """Apply all cleaning transformations."""
-    initial_count = len(df)
+def clean_transactions(trans, prod):
+    """Executes the cleaning pipeline."""
+    print(f"Initial Rows: {len(trans):,}")
+    initial_rev = trans['SALES_VALUE'].sum()
     
-    # Step 1: Remove positive discounts (surcharges)
-    print("\nStep 1: Removing positive discounts...")
-    df = df[(df['RETAIL_DISC'] <= 0) & (df['COUPON_DISC'] <= 0)].copy()
-    removed = initial_count - len(df)
-    print(f"  Removed {removed} rows with positive discounts")
+    # 1. ENRICHMENT
+    # Merge Product Category for semantic filtering
+    trans = trans.merge(prod[['PRODUCT_ID', 'COMMODITY_DESC']], on='PRODUCT_ID', how='left')
+    trans['COMMODITY_DESC'] = trans['COMMODITY_DESC'].fillna('UNKNOWN')
+
+    # 2. SURGICAL FILTERING
+    print("\nStep 2: Applying Surgical Filters...")
     
-    # Step 2: Convert relative days to dates
-    print("\nStep 2: Converting days to dates...")
+    # A. Semantic Filter (Fuel)
+    # Catches Fuel/Gasoline explicitly as it may exceed the economic price floor
+    fuel_mask = trans['COMMODITY_DESC'].str.contains('FUEL|GASOLINE', case=False, na=False)
+    
+    # B. Economic Filter (Row-Level)
+    # Identifies administrative items (Points/Tokens) via implied unit price.
+    # Logic: If Price < $0.05 AND Sales > 0, it is not physical merchandise.
+    unit_price = trans['SALES_VALUE'] / trans['QUANTITY']
+    non_merch_mask = (unit_price < MIN_UNIT_PRICE) & (trans['SALES_VALUE'] > 0)
+    
+    # Execute Removal
+    remove_mask = fuel_mask | non_merch_mask
+    grocery_df = trans[~remove_mask].copy()
+    
+    print(f"  > Removed {remove_mask.sum():,} rows identified as Non-Merchandise (Fuel/Points).")
+
+    # 3. SAFETY CAP
+    print("\nStep 3: Applying Quantity Safety Cap...")
+    # Removes data entry errors (e.g., fat-finger scans) for remaining valid items
+    outlier_mask = grocery_df['QUANTITY'] > QTY_CAP
+    
+    if outlier_mask.sum() > 0:
+        print(f"  > Removed {outlier_mask.sum():,} outliers exceeding {QTY_CAP} units.")
+        grocery_df = grocery_df[~outlier_mask].copy()
+        
+    # 4. STANDARDIZATION
+    print("\nStep 4: Standardizing Dates & Metrics...")
+    
+    # Remove negative discounts (accounting artifacts)
+    grocery_df = grocery_df[grocery_df['RETAIL_DISC'] <= 0]
+    
+    # Calculate Date from Day Index
     anchor = pd.Timestamp(ANCHOR_DATE)
-    df['DATE'] = anchor + pd.to_timedelta(df['DAY'] - 1, unit='D')
-    print(f"  Date range: {df['DATE'].min()} to {df['DATE'].max()}")
+    grocery_df['DATE'] = anchor + pd.to_timedelta(grocery_df['DAY'] - 1, unit='D')
     
-    # Step 3: Parse transaction time
-    print("\nStep 3: Parsing transaction times...")
-    df['TRANS_TIME_STR'] = df['TRANS_TIME'].astype(str).str.zfill(4)
-    df['TIME'] = pd.to_datetime(df['TRANS_TIME_STR'], format='%H%M').dt.time
-    df.drop('TRANS_TIME_STR', axis=1, inplace=True)
+    # Create absolute discount field for downstream analysis
+    grocery_df['TOTAL_DISCOUNT_ABS'] = (grocery_df['RETAIL_DISC'] + grocery_df['COUPON_DISC']).abs()
     
-    # Step 4: Calculate total discount (absolute value)
-    print("\nStep 4: Calculating total discount...")
-    df['TOTAL_DISCOUNT_ABS'] = (df['RETAIL_DISC'] + df['COUPON_DISC']).abs()
+    # Drop helper columns
+    grocery_df.drop(columns=['COMMODITY_DESC'], inplace=True)
     
-    return df
-
-def save_output(df):
-    """Save cleaned data to processed folder."""
-    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+    # 5. REPORTING
+    final_rev = grocery_df['SALES_VALUE'].sum()
+    print(f"\n=== FINAL CLEANING REPORT ===")
+    print(f"Grocery Rows:     {len(grocery_df):,}")
+    print(f"Revenue Retained: {(final_rev/initial_rev)*100:.2f}%")
     
-    output_path = PROCESSED_DIR / "fact_transactions.csv"
-    df.to_csv(output_path, index=False)
-    print(f"\n✅ Saved to {output_path}")
-    print(f"   Final row count: {len(df):,}")
+    return grocery_df
 
 def main():
-    print("=" * 50)
-    print("TRANSACTION DATA CLEANING PIPELINE")
-    print("=" * 50)
+    trans, prod = load_data()
+    clean_df = clean_transactions(trans, prod)
     
-    df = load_transactions()
-    df = clean_transactions(df)
-    save_output(df)
-    
-    print("\n" + "=" * 50)
-    print("PIPELINE COMPLETE")
-    print("=" * 50)
+    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+    clean_df.to_csv(PROCESSED_DIR / "fact_transactions.csv", index=False)
+    print("\n✅ Cleaned data saved to 'data/processed/fact_transactions.csv'")
 
 if __name__ == "__main__":
     main()

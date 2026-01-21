@@ -33,8 +33,8 @@ def build_dim_household():
                  'KID_CATEGORY_DESC']
     dim[fill_cols] = dim[fill_cols].fillna('Unknown')
     
-    print(f"  Total households: {len(dim)}")
-    print(f"  With demographics: {(dim['AGE_DESC'] != 'Unknown').sum()}")
+    print(f"  Total households: {len(dim):,}")
+    print(f"  With demographics: {(dim['AGE_DESC'] != 'Unknown').sum():,}")
     
     dim.to_csv(PROCESSED_DIR / "dim_household.csv", index=False)
     return dim
@@ -46,7 +46,7 @@ def build_dim_product():
     dim = pd.read_csv(RAW_DIR / "product.csv")
     dim.to_csv(PROCESSED_DIR / "dim_product.csv", index=False)
     
-    print(f"  Total products: {len(dim)}")
+    print(f"  Total products: {len(dim):,}")
     return dim
 
 def build_dim_campaign():
@@ -73,7 +73,7 @@ def build_dim_campaign():
     
     dim.to_csv(PROCESSED_DIR / "dim_campaign.csv", index=False)
     
-    print(f"  Total campaigns: {len(dim)}")
+    print(f"  Total campaigns: {len(dim):,}")
     return dim
 
 def build_dim_calendar():
@@ -109,7 +109,7 @@ def build_dim_calendar():
     dim.to_csv(PROCESSED_DIR / "dim_calendar.csv", index=False)
     
     print(f"  Date range: {dim['Date'].min()} to {dim['Date'].max()}")
-    print(f"  Total days: {len(dim)}")
+    print(f"  Total days: {len(dim):,}")
     return dim
 
 def build_fact_redemptions():
@@ -124,7 +124,7 @@ def build_fact_redemptions():
     
     df.to_csv(PROCESSED_DIR / "fact_redemptions.csv", index=False)
     
-    print(f"  Total redemptions: {len(df)}")
+    print(f"  Total redemptions: {len(df):,}")
     return df
 
 def main():
