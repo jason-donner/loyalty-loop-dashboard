@@ -59,7 +59,7 @@ def calculate_monthly_metrics(df, spine_df):
     print("Calculating Monthly Metrics...")
     
     # 1. Aggregate Transactions by Month
-    df['Month_Start'] = df['DATE'].dt.floor('dS') + pd.offsets.MonthBegin(-1) # Normalizing to Month Start
+    df['Month_Start'] = df['DATE'].dt.to_period('M').dt.to_timestamp() # Normalizing to Month Start
     
     monthly_aggs = df.groupby(['household_key', 'Month_Start']).agg({
         'SALES_VALUE': 'sum',
