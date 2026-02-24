@@ -127,24 +127,54 @@ def calculate_history_and_status(snapshot):
     
     return snapshot
 
+def create_current_state(df):
+    """
+    Generates a current-state dimension based on the global latest date in the dataset.
+    This provides the operational 'Who to call today' list.
+    """
+    print("Generating Current Customer State Dimension...")
+    
+    # 1. Define 'Today' as the absolute maximum date in the entire transaction log
+    global_max_date = df['DATE'].max()
+    
+    # 2. Get the absolute last purchase date for every household
+    current_state = df.groupby('household_key')['DATE'].max().reset_index()
+    current_state = current_state.rename(columns={'DATE': 'Last_Purchase_Date'})
+    
+    # 3. Calculate True Lapsed Days
+    current_state['Current_Lapsed_Days'] = (global_max_date - current_state['Last_Purchase_Date']).dt.days
+    
+    # 4. Assign Strategic Status
+    conditions = [
+        (current_state['Current_Lapsed_Days'] <= 14),
+        (current_state['Current_Lapsed_Days'] <= 30),
+        (current_state['Current_Lapsed_Days'] < 999)
+    ]
+    choices = ['Active', 'At-Risk', 'Churned']
+    
+    current_state['Current_Status'] = np.select(conditions, choices, default='Unknown')
+    
+    return current_state
+
 def main():
     print("="*50)
-    print("SNAPSHOT GENERATOR (The Time Machine)")
+    print("SNAPSHOT & CURRENT STATE GENERATOR")
     print("="*50)
     
     # 1. Load
     df = load_transactions()
     
-    # 2. Build Spine
+    # --- NEW: Generate Current State Dimension ---
+    dim_current_state = create_current_state(df)
+    current_output_file = PROCESSED_DIR / "dim_customer_current.csv"
+    print(f"\nSaving Current State to {current_output_file}...")
+    dim_current_state.to_csv(current_output_file, index=False)
+    
+    # --- EXISTING: Generate Historical Snapshots ---
     spine = create_customer_month_spine(df)
-    
-    # 3. Aggregate
     snapshot = calculate_monthly_metrics(df, spine)
-    
-    # 4. Enrich
     final_snapshot = calculate_history_and_status(snapshot)
     
-    # 5. Clean up columns for export
     export_cols = [
         'household_key', 'Month_Start', 'Month_End', 
         'Monthly_Spend', 'Monthly_Visits', 'Rolling_3M_Spend',
@@ -152,10 +182,9 @@ def main():
     ]
     final_snapshot = final_snapshot[export_cols]
     
-    # 6. Save
-    print(f"\nSaving {len(final_snapshot):,} rows to {OUTPUT_FILE}...")
+    print(f"\nSaving Snapshots to {OUTPUT_FILE}...")
     final_snapshot.to_csv(OUTPUT_FILE, index=False)
-    print("Snapshot generation complete.")
+    print("Generation complete.")
 
 if __name__ == "__main__":
     main()

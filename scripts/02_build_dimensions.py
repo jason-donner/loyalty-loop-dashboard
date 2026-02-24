@@ -121,6 +121,14 @@ def build_fact_redemptions():
     # Add date
     anchor = pd.Timestamp(ANCHOR_DATE)
     df['DATE'] = anchor + pd.to_timedelta(df['DAY'] - 1, unit='D')
+
+    # ---------------------------------------------------------
+    # Filter out partial month
+    # ---------------------------------------------------------
+    CUTOFF_DATE = "2025-11-30"
+    print(f"  > Applying Cutoff: {CUTOFF_DATE}")
+    df = df[df['DATE'] <= CUTOFF_DATE]
+    # ---------------------------------------------------------
     
     df.to_csv(PROCESSED_DIR / "fact_redemptions.csv", index=False)
     

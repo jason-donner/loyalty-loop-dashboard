@@ -76,6 +76,10 @@ def clean_transactions(trans, prod):
     anchor = pd.Timestamp(ANCHOR_DATE)
     grocery_df['DATE'] = anchor + pd.to_timedelta(grocery_df['DAY'] - 1, unit='D')
     
+    # Filter Out Partial Month
+    print(f"  > Filtered out partial month of December 2025.")
+    grocery_df = grocery_df[grocery_df['DATE'] <= '2025-11-30']
+
     # Create absolute discount field for downstream analysis
     grocery_df['TOTAL_DISCOUNT_ABS'] = (grocery_df['RETAIL_DISC'] + grocery_df['COUPON_DISC']).abs()
     

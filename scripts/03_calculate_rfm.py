@@ -66,8 +66,17 @@ def assign_strategic_scores(rfm):
     
     print(f"  > Scoring F/M on {len(active_data):,} Active/At-Risk households (out of {len(rfm):,})")
     
-    # Calculate Quartiles (1-4) for Active population
-    # Note: We use quartiles (4 bins) to force a stricter curve than quintiles
+    # 2. FREQUENCY & MONETARY (Relative Scoring)
+    # MODIFIED: Score F/M for EVERYONE, not just Active users.
+    # This ensures we can identify "High Value Churn" (Whales who left).
+    
+    # Select ALL rows (instead of filtering for R_Score >= 3)
+    active_mask = rfm['household_key'].notnull()
+    active_data = rfm[active_mask]
+    
+    print(f"  > Scoring F/M on {len(active_data):,} households (All Users)")
+    
+    # Calculate Quartiles (1-4) for the WHOLE population
     try:
         rfm.loc[active_mask, 'F_Score'] = pd.qcut(active_data['Frequency'].rank(method='first'), 4, labels=[1, 2, 3, 4]).astype(int)
         rfm.loc[active_mask, 'M_Score'] = pd.qcut(active_data['Monetary'].rank(method='first'), 4, labels=[1, 2, 3, 4]).astype(int)
