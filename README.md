@@ -4,7 +4,7 @@
 ![Tools](https://img.shields.io/badge/Tools-Python%20|%20SQL%20|%20Power%20BI-1B4965?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-5FA8D3?style=flat-square)
 
-> An enterprise grade portfolio project demonstrating Python data pipeline engineering, statistical analysis, and VertiPaq optimized data architecture.
+> An enterprise grade portfolio project demonstrating Python data pipeline engineering, statistical analysis, and dashboarding skills.
 
 ***
 
@@ -18,7 +18,7 @@ A retail grocery chain with 2,500 tracked households and 2.5 million transaction
 
 ***
 
-## The Analytical Engine (Jupyter Notebooks)
+## Data Exploration and Profiling (Jupyter Notebooks)
 
 Before building the presentation layer, I utilized Python and Pandas to validate all statistical assumptions and cleanse the raw data. The core logic is documented in two primary notebooks:
 
@@ -96,20 +96,37 @@ loyalty-loop-dashboard/
    git clone [https://github.com/jason.donner/loyalty-loop.git](https://github.com/jason.donner/loyalty-loop.git)
    ```
 
-2. **Install Dependencies:**
+2. **Download the Raw Data:**
+   Due to GitHub file size constraints, the raw 2.5 million row dataset is excluded from this repository. You must download "The Complete Journey" dataset directly from Dunnhumby and extract the source `.csv` files into the local `data/raw/` directory.
+
+3. **Install Dependencies:**
 
    ```bash
    pip install pandas numpy matplotlib seaborn jupyter
    ```
 
-3. **Explore the Notebooks:**
+4. **Run the Pipeline:**
+
+   ```bash
+   # Step 1: Clean & Standardize
+   python scripts/01_clean_transactions.py
+   
+   # Step 2: Build Schema
+   python scripts/02_build_dimensions.py
+   
+   # Step 3: Engineer Features
+   python scripts/03_calculate_rfm.py
+   python scripts/04_build_current_state.py
+   ```
+
+5. **Explore the Notebooks:**
 
    ```bash
    jupyter notebook notebooks/01_EDA_Initial_Exploration.ipynb
    jupyter notebook notebooks/02_Churn_Threshold_Analysis.ipynb
    ```
 
-4. **Launch Presentation Layer:** Open `Loyalty_Loop_Dashboard_v2.0.pbix` in Power BI Desktop to view the optimized star schema and DAX logic.
+6. **Launch Presentation Layer:** Open `Loyalty_Loop_Dashboard_v2.0.pbix` in Power BI Desktop to view the optimized star schema and DAX logic.
 
 ***
 
@@ -117,5 +134,5 @@ loyalty-loop-dashboard/
 
 **Jason Donner**
 
-* Data Analytics & Visualizations Professional
+* Data Analytics & Visualization Professional
 * Focus: Enterprise Data Architecture, Retail Analytics, System Optimization
