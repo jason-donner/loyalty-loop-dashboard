@@ -1,0 +1,16 @@
+{
+  "name": "Loyalty Loop",
+  "dataColors": [
+    "#1B4965",
+    "#5FA8D3",
+    "#62B6CB",
+    "#BEE9E8",
+    "#CAD2C5",
+    "#2A9D8F",
+    "#E9C46A",
+    "#E76F51"
+  ],
+  "background": "#F8F9FA",
+  "foreground": "#212529",
+  "tableAccent": "#1B4965"
+}
