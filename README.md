@@ -61,24 +61,28 @@ I built a Python pipeline to ingest the raw `.csv` files, apply the economic fil
 ## Project Structure
 
 ```text
-loyalty-loop-dashboard/
-├── data/
-│   ├── raw/                           # (GitIgnored)
+loyalty-loop-dashboard/                
+├── data/                              # GitIgnored due to file size limits
+│   ├── raw/                           # Raw tables for Dunnhummby dataset
 │   ├── processed/                     # Cleaned star schema files
 ├── notebooks/
 │   ├── 01_EDA_Initial_Exploration.ipynb
 │   ├── 02_Churn_Threshold_Analysis.ipynb
 ├── docs/
-│   ├── CASE_STUDY.md                  # Executive narrative and engineering process
-│   ├── METHODOLOGY.md                 # Statistical justification and control group math
+│   ├── CASE_STUDY.md                  # Executive narrative and engineering
+│   ├── METHODOLOGY.md                 # Statistical justification
 │   ├── DATA_DICTIONARY.md             # Column level definitions
 │   ├── DAX_MEASURES.md                # Power BI formula reference
-│   └── NARRATIVE_GUIDE.md             # Interview talking points
 ├── scripts/
 │   ├── 01_clean_transactions.py       # Economic and semantic filters
 │   ├── 02_build_dimensions.py         # Schema construction
 │   ├── 03_calculate_rfm.py            # Strategic Segmentation logic
 │   └── 04_build_current_state.py      # Version 2.0 dimensional grain control
+├── powerbi/
+│   ├── loyalty_loop_theme.json        # Foundation for consistent formatting
+│   ├── LoyaltyLoop_Dashboard_v1.0.pbix         # Initial build test
+│   ├── LoyaltyLoop_Dashboard_v1.1.pbix         # Flawed snapshot based build
+|   ├── LoyaltyLoop_Dashboard_v1.2.pbix         # Finalized build
 └── README.md
 ```
 
@@ -113,5 +117,5 @@ loyalty-loop-dashboard/
 
 **Jason Donner**
 
-* Data Analytics & Operations Management Professional
+* Data Analytics & Visualizations Professional
 * Focus: Enterprise Data Architecture, Retail Analytics, System Optimization
