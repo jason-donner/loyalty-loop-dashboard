@@ -8,125 +8,113 @@
 
 ***
 
-## Business Problem
+## 1. Executive Summary & Data Governance
 
-A retail grocery chain with 2,500 tracked households and 2.5 million transactions faced three critical operational blind spots:
+A retail grocery chain with 2,500 tracked households and 2.5 million transactions required visibility into customer churn risk and marketing effectiveness.
 
-1. **Invisible Churn:** The company used a standard 90 day definition for churn. High velocity shoppers were breaking habits weeks before being flagged, rendering retention campaigns reactive.
-2. **Metric Contamination:** Core operational metrics were artificially skewed by the inclusion of non merchandise administrative rows (e.g., fuel and loyalty points).
-3. **Cannibalization vs. ROI:** Store operations were executing highly complex personalized campaigns without control group visibility into whether these promotions drove incremental Gross Sales or simply subsidized existing behavior.
+![Executive Summary Dashboard](assets/loyalty-loop-preview.png)
 
-***
+**Key Operational Impacts:**
 
-## Data Exploration and Profiling (Jupyter Notebooks)
-
-Before building the presentation layer, I utilized Python and Pandas to validate all statistical assumptions and cleanse the raw data. The core logic is documented in two primary notebooks:
-
-### 1. 01_EDA_Initial_Exploration.ipynb
-
-* **Objective:** Profile the 2.5 million row transaction log.
-* **Execution:** I engineered semantic and economic filters to identify and drop 25,000 contaminated records (Fuel and Points) that were destroying basket metrics. I also audited the data for positive discount anomalies to ensure strict financial governance.
-
-### 2. 02_Churn_Threshold_Analysis.ipynb
-
-* **Objective:** Derive a mathematically sound churn definition.
-* **Execution:** I calculated the Inter Purchase Intervals for all households, discovering a median return rate of just 4 days. Using a statistical upper fence, I validated a new 30 Day Churn Threshold. I then wrote custom functions to execute a Strategic RFM segmentation model based strictly on biological shopping cycles.
+* **Metric Contamination Corrected:** The initial dataset included 25,000 non merchandise administrative rows (Fuel and Loyalty Points). Eradicating these anomalies corrected core metrics like Average Basket Value, which had previously been artificially inflated by approximately 15%.
+* **Baseline Establishment:** Established a clean baseline of true Gross Merchandise Value to ensure all subsequent ROI calculations were anchored in actual revenue.
 
 ***
 
-## Key Findings & Business Impact
+## 2. Defining Appropriate Churn Threshold
 
-| Category | Finding & Impact |
-| :--- | :--- |
-| **Gross Sales Protection** | The 30 day threshold revealed 346 High Value Households sitting in the critical 15 to 30 day intervention window. This represents over **$250,000 in annualized Gross Sales** that can now be proactively targeted. |
-| **Marketing Efficiency** | Control group Difference in Differences (DiD) analysis proved that Mass Marketing drove a +14% Net Incremental Lift. Conversely, highly complex Personalized Campaigns resulted in a **negative net lift** (cannibalization), providing the mandate to halt them and save store labor. |
-| **Data Integrity** | Eradicating 25,000+ noise records corrected core metrics like Average Basket Value, which had previously been skewed by approximately 15%. |
+Standard industry practice utilized a reactive 90 day churn definition. By calculating the median Inter Purchase Interval (IPI), I proved the actual shopping cycle was 4 days.
 
-***
+* **Threshold Enforcement:** Implemented a strict 30 Day Churn Threshold based on statistical upper fences.
+* **Gross Sales Protection:** This dynamic threshold revealed 346 High Value Households sitting in the critical 15 to 30 day intervention window. This exposed over **$250,000 in annualized Gross Sales** at risk that were entirely hidden by the legacy 90 day metric.
+* **Strategic RFM:** Built a custom RFM segmentation model to categorize these households for targeted operational intervention.
 
-## Technical Approach & Architecture
+## 3. Customer Profile Analytics
 
-### Phase 1: ETL & Feature Engineering (Python)
+![Customer Lifecycle Dashboard](assets/page-2-drilldown.png)
 
-I built a Python pipeline to ingest the raw `.csv` files, apply the economic filters, calculate the Strategic RFM scores, and output a clean, normalized relational model.
+**Key Operational Impacts:**
 
-### Phase 2: Architectural Pivot & Optimization (Power BI)
 
-* **Version 1.0 Failure:** My initial architecture attempted to track historical status using a dense periodic snapshot fact table. Upon loading, this caused Cartesian product explosions and many to many filter collisions that resulted in inaccuracy and performance issues.
-* **Version 2.0 Refactor:** I refactored the Python pipeline to output a `dim_customer_current` dimension table based on the absolute maximum transaction date per household. This enforced a strict 1-to-Many star schema, instantly resolving the Cartesian explosions and dropping UI rendering times to sub second levels.
-* **Memory Management:** I utilized the external XMLA endpoint tool Measure Killer to audit the final model, physically removing orphaned DAX measures and unused source columns to minimize memory bloat.
 
 ***
 
-## Project Structure
+## 4. Marketing Effectiveness & Campaign ROI
 
-```text
-loyalty-loop-dashboard/                
-├── data/                              # GitIgnored due to file size limits
-│   ├── raw/                           # Raw tables for Dunnhummby dataset
-│   ├── processed/                     # Cleaned star schema files
-├── notebooks/
-│   ├── 01_EDA_Initial_Exploration.ipynb
-│   ├── 02_Churn_Threshold_Analysis.ipynb
-├── docs/
-│   ├── CASE_STUDY.md                  # Executive narrative and engineering
-│   ├── METHODOLOGY.md                 # Statistical justification
-│   ├── DATA_DICTIONARY.md             # Column level definitions
-│   ├── DAX_MEASURES.md                # Power BI formula reference
-├── scripts/
-│   ├── 01_clean_transactions.py       # Economic and semantic filters
-│   ├── 02_build_dimensions.py         # Schema construction
-│   ├── 03_calculate_rfm.py            # Strategic Segmentation logic
-│   └── 04_build_current_state.py      # Version 2.0 dimensional grain control
-├── powerbi/
-│   ├── loyalty_loop_theme.json        # Foundation for consistent formatting
-│   ├── LoyaltyLoop_Dashboard_v1.0.pbix         # Initial build test
-│   ├── LoyaltyLoop_Dashboard_v1.1.pbix         # Flawed snapshot based build
-|   ├── LoyaltyLoop_Dashboard_v1.2.pbix         # Finalized build
-└── README.md
+Store operations were executing highly complex personalized campaigns without control group visibility. To determine true incrementality, I applied a Difference in Differences (DiD) control group methodology to compare Target versus Control households.
+
+![Marketing Effectiveness Dashboard](assets/page3-marketing.png)
+
+**Key Operational Impacts:**
+
+* **Mass Marketing Efficiency:** The DiD analysis proved that standard Mass Marketing drove a +14% Net Incremental Lift.
+* **Personalization Cannibalization:** Highly complex Personalized Campaigns resulted in a negative net lift. The discounts subsidized purchases that would have occurred naturally, cannibalizing Gross Sales. This provided the mathematical mandate to halt these specific campaigns and reallocate store labor.
+
+### DAX Implementation: DiD Lift Calculation
+
+```dax
+// Calculates the Net Incremental Lift comparing Target vs Control groups across two periods
+Net_Incremental_Lift = 
+VAR TargetPre = CALCULATE([Total Sales], 'Campaign'[Group] = "Target", 'Date'[Period] = "Pre")
+VAR TargetPost = CALCULATE([Total Sales], 'Campaign'[Group] = "Target", 'Date'[Period] = "Post")
+VAR ControlPre = CALCULATE([Total Sales], 'Campaign'[Group] = "Control", 'Date'[Period] = "Pre")
+VAR ControlPost = CALCULATE([Total Sales], 'Campaign'[Group] = "Control", 'Date'[Period] = "Post")
+
+VAR TargetDiff = TargetPost - TargetPre
+VAR ControlDiff = ControlPost - ControlPre
+
+RETURN
+DIVIDE((TargetDiff - ControlDiff), ControlPre, 0)
 ```
 
 ***
 
-## Setup Instructions
+## 5. Data Architecture & Python ETL Pipeline
 
-1. **Clone the Repository:**
+The initial data pipeline (Version 1.0) attempted to track historical customer status using a monthly snapshot fact table. Upon loading into the presentation layer, this design failed at scale, causing Cartesian products and filter context collisions.
 
-   ```bash
-   git clone [https://github.com/jason.donner/loyalty-loop.git](https://github.com/jason.donner/loyalty-loop.git)
-   ```
+To resolve this, I refactored the Python pipeline to output a strict `dim_customer_current` dimension table based on the absolute maximum transaction date per household.
 
-2. **Download the Raw Data:**
-   Due to GitHub file size constraints, the raw 2.5 million row dataset is excluded from this repository. You must download "The Complete Journey" dataset directly from Dunnhumby and extract the source `.csv` files into the local `data/raw/` directory.
+### Python Implementation: Dimensional Grain Control
 
-3. **Install Dependencies:**
+```python
+# Extract from scripts/04_build_current_state.py
+import pandas as pd
 
-   ```bash
-   pip install pandas numpy matplotlib seaborn jupyter
-   ```
+def build_current_customer_dim(transactions_df):
+    """
+    Collapses 2.5M transaction rows into a single source of truth 
+    dimension table to prevent Cartesian explosions in VertiPaq.
+    """
+    # Isolate absolute max date per household
+    latest_tx = transactions_df.groupby('household_key')['transaction_date'].max().reset_index()
+    latest_tx.rename(columns={'transaction_date': 'last_purchase_date'}, inplace=True)
+    
+    # Calculate days since last purchase for dynamic churn modeling
+    analysis_date = transactions_df['transaction_date'].max()
+    latest_tx['days_since_prior'] = (analysis_date - latest_tx['last_purchase_date']).dt.days
+    
+    # Enforce 30-Day Churn Threshold based on median IPI
+    latest_tx['status'] = latest_tx['days_since_prior'].apply(
+        lambda x: 'Churned' if x > 30 else 'Active'
+    )
+    
+    return latest_tx
+```
 
-4. **Run the Pipeline:**
+This architectural pivot optimized the VertiPaq model, eliminating many to many filter collisions and enabling precise operational drill throughs.
 
-   ```bash
-   # Step 1: Clean & Standardize
-   python scripts/01_clean_transactions.py
-   
-   # Step 2: Build Schema
-   python scripts/02_build_dimensions.py
-   
-   # Step 3: Engineer Features
-   python scripts/03_calculate_rfm.py
-   python scripts/04_build_current_state.py
-   ```
+***
 
-5. **Explore the Notebooks:**
+## 6. Project Structure & Setup Instructions
 
-   ```bash
-   jupyter notebook notebooks/01_EDA_Initial_Exploration.ipynb
-   jupyter notebook notebooks/02_Churn_Threshold_Analysis.ipynb
-   ```
+Due to GitHub file size constraints, the raw 2.5 million row Dunnhumby dataset is excluded. To run this pipeline locally:
 
-6. **Launch Presentation Layer:** Open `Loyalty_Loop_Dashboard_v2.0.pbix` in Power BI Desktop to view the optimized star schema and DAX logic.
+1. Clone the repository and download "The Complete Journey" dataset from Dunnhumby into `data/raw/`.
+2. Install dependencies: `pip install pandas numpy matplotlib seaborn jupyter`
+3. Execute the Python ETL scripts located in the `/scripts/` directory in numerical order.
+4. Review the statistical logic within the Jupyter notebooks located in `/notebooks/`.
+5. Open `powerbi/Loyalty_Loop_Dashboard_v2.0.pbix` to review the optimized star schema.
 
 ***
 
