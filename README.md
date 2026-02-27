@@ -17,13 +17,13 @@ A retail grocery chain with 2,500 tracked households and 2.5 million transaction
 **Key Operational Impacts:**
 
 * **Metric Contamination Corrected:** The initial dataset included 25,000 non merchandise administrative rows (Fuel and Loyalty Points). Eradicating these anomalies corrected core metrics like Average Basket Value, which had previously been artificially inflated by approximately 15%.
-* **Baseline Establishment:** Established a clean baseline of true Gross Merchandise Value to ensure all subsequent ROI calculations were anchored in actual revenue.
+* **Baseline Establishment:** Established a clean baseline of true Gross Revenue Value to ensure all subsequent ROI calculations were anchored in actual revenue.
 
 ***
 
 ## 2. Customer Lifecycle & Churn Analytics
 
-Standard industry practice utilized a reactive 90 day churn definition. By calculating the median Inter Purchase Interval (IPI), I proved the actual biological shopping cycle was 4 days.
+Standard industry practice utilized a reactive 90 day churn definition. By calculating the median Inter Purchase Interval (IPI), I proved the actual shopping cycle was 4 days.
 
 ![Customer Lifecycle Dashboard](assets/page-2-drilldown.png)
 
@@ -74,7 +74,7 @@ The frontend of this solution was engineered to transition raw data into an acti
 * **Operational Drill Throughs:** The dashboard is not a static reporting tool. Store managers can right click the 'At Risk' segment (the 346 households identified in the 15 to 30 day window) and execute a drill through to a hidden, granular tabular view. This exposes the specific `household_key` identifiers and transaction histories required for targeted intervention.
 * **Dynamic UX & Bookmarking:** To prevent visual clutter on the Campaign ROI page, I implemented custom bookmarking and selection panes. This allows users to toggle seamlessly between the Target group and Control group distributions without requiring separate report pages.
 * **DAX Driven Conditional Formatting:** Visual cues are strictly automated via DAX logic. The Difference in Differences (DiD) matrix utilizes conditional formatting to instantly flag negative incremental lift (cannibalization) in red, ensuring executive attention is drawn immediately to failing personalized campaigns.
-* **Optimized Filter Context:** Because the underlying architecture was refactored into a strict star schema with a `dim_customer_current` table, cross filtering between the Strategic RFM scatter plots and the macro Gross Sales KPIs resolves in sub second render times via the VertiPaq engine.
+* **Optimized Filter Context:** Because the underlying architecture was refactored into a strict star schema with a `dim_customer_current` table, cross filtering between the Strategic RFM scatter plots and the macro Gross Sales KPIs resolves in sub second render times..
 
 ***
 
@@ -110,7 +110,7 @@ def build_current_customer_dim(transactions_df):
     return latest_tx
 ```
 
-This architectural pivot optimized the data model, eliminating many to many filter collisions and enabling precise operational drill throughs.
+This architectural pivot optimized the data model, eliminating many to many filter collisions and enabling precise operational drillthroughs.
 
 ***
 
@@ -131,4 +131,4 @@ Due to GitHub file size constraints, the raw 2.5 million row Dunnhumby dataset i
 **Jason Donner**
 
 * Data Analytics & Visualization Professional
-* Focus: Enterprise Data Architecture, Retail Analytics, System Optimization
+* Focus: Data Architecture, Retail Analytics, System Optimization, Dashboard Design
