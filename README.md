@@ -12,7 +12,7 @@
 
 A retail grocery chain with 2,500 tracked households and 2.5 million transactions required visibility into customer churn risk and marketing effectiveness but lacked a scalable data architecture to support granular analysis.
 
-![Executive Summary Dashboard](assets/loyalty-loop-preview.png)
+![Executive Summary Dashboard](assets/page-1-overview.png)
 
 **Key Operational Impacts:**
 
